@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 const productColumns = [
   {
@@ -27,8 +28,14 @@ export function Footer() {
       <div className="container mx-auto grid gap-10 px-4 py-12 lg:grid-cols-[2fr,3fr] lg:px-8">
         <div className="space-y-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded bg-sky-600 text-white">
-              <span className="text-lg font-bold">TB</span>
+            <div className="relative h-10 w-10 overflow-hidden rounded">
+              <Image
+                src="/logo.png"
+                alt="TermoBizz"
+                fill
+                sizes="40px"
+                className="object-contain"
+              />
             </div>
             <div className="flex flex-col">
               <span className="text-sm font-semibold tracking-wide">

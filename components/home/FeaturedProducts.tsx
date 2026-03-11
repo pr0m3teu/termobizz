@@ -1,40 +1,4 @@
-type FeaturedProduct = {
-  id: number;
-  title: string;
-  category: string;
-  highlight: string;
-};
-
-const featuredProducts: FeaturedProduct[] = [
-  {
-    id: 1,
-    title: "Relee statice monofazate - SSR",
-    category: "Relee & contactoare statice",
-    highlight:
-      "Metoda trecerii prin zero, semnal de comanda standard, special pentru sarcini rezistive.",
-  },
-  {
-    id: 2,
-    title: "Contactoare statice monofazate",
-    category: "Relee & contactoare statice",
-    highlight:
-      "Sigurante rapide, protectie la supracurent si supratensiune, indicare LED.",
-  },
-  {
-    id: 3,
-    title: "Relee statice trifazate - TSR",
-    category: "Relee & contactoare statice",
-    highlight:
-      "Control prin trecere prin zero, semnal de control 4 ÷ 32 Vcc sau 8 ÷ 250 Vca.",
-  },
-  {
-    id: 4,
-    title: "Accesorii pentru relee statice",
-    category: "Accesorii",
-    highlight:
-      "Radiatoare din aluminiu, capace de protectie si folie tampon pentru montaj.",
-  },
-];
+import { HOME_FEATURED_PRODUCTS } from "@/lib/homeData";
 
 export function FeaturedProducts() {
   return (
@@ -55,7 +19,7 @@ export function FeaturedProducts() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {featuredProducts.map((product) => (
+          {HOME_FEATURED_PRODUCTS.map((product) => (
             <article
               key={product.id}
               className="flex h-full flex-col rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm shadow-sm"

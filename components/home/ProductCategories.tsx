@@ -1,47 +1,4 @@
-type Category = {
-  id: number;
-  name: string;
-  description: string;
-};
-
-const categories: Category[] = [
-  {
-    id: 1,
-    name: "Rezistente electrice",
-    description:
-      "Rezistente cartus, banda, inelare, tubulare si solutii custom pentru aplicatii industriale.",
-  },
-  {
-    id: 2,
-    name: "Senzori de temperatura",
-    description:
-      "Termocupluri, termorezistente si senzori speciali pentru intervale largi de temperatura.",
-  },
-  {
-    id: 3,
-    name: "Reglare si control",
-    description:
-      "Regulatoare de temperatura, controlere PID, instrumente de panou si accesorii.",
-  },
-  {
-    id: 4,
-    name: "Relee & contactoare statice",
-    description:
-      "Relee si contactoare statice monofazate si trifazate, accesorii si radiatoare.",
-  },
-  {
-    id: 5,
-    name: "Solutii complete",
-    description:
-      "Ansambluri si subansamble gata de integrat in echipamentele de productie.",
-  },
-  {
-    id: 6,
-    name: "Servicii & consultanta",
-    description:
-      "Suport tehnic la selectie, dimensionare si integrare in procesele existente.",
-  },
-];
+import { HOME_CATEGORIES } from "@/lib/homeData";
 
 export function ProductCategories() {
   return (
@@ -64,7 +21,7 @@ export function ProductCategories() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {categories.map((category) => (
+          {HOME_CATEGORIES.map((category) => (
             <article
               key={category.id}
               className="flex h-full flex-col rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"

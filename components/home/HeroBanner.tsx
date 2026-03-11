@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export function HeroBanner() {
   return (
     <section className="border-b bg-slate-950 text-slate-50">
@@ -17,12 +19,18 @@ export function HeroBanner() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <button className="inline-flex items-center rounded bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700">
+            <Link
+              href="/produse"
+              className="inline-flex items-center rounded bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
+            >
               Vezi gama de produse
-            </button>
-            <button className="inline-flex items-center rounded border border-slate-700 px-4 py-2 text-sm font-medium text-slate-100 transition hover:border-sky-500 hover:text-sky-300">
+            </Link>
+            <Link
+              href="/contact"
+              className="inline-flex items-center rounded border border-slate-700 px-4 py-2 text-sm font-medium text-slate-100 transition hover:border-sky-500 hover:text-sky-300"
+            >
               Cere oferta personalizata
-            </button>
+            </Link>
           </div>
           <dl className="grid gap-4 text-xs text-slate-300 sm:grid-cols-3">
             <div>
