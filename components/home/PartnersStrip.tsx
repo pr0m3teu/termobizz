@@ -1,12 +1,55 @@
-const partners = [
-  "Partener industrial A",
-  "Partener industrial B",
-  "Partener integrator C",
-  "Partener OEM D",
-  "Partener OEM E",
-];
+import fs from "fs/promises";
+import path from "path";
+import Image from "next/image";
 
-export function PartnersStrip() {
+const PARTNER_DIR = path.join(process.cwd(), "public", "parteneri");
+const VALID_IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg"];
+
+type PartnerLogo = {
+  fileName: string;
+  src: string;
+  name: string;
+};
+
+async function getPartnerLogos(): Promise<PartnerLogo[]> {
+  try {
+    const entries = await fs.readdir(PARTNER_DIR, { withFileTypes: true });
+
+    return entries
+      .filter((entry) => {
+        if (!entry.isFile()) return false;
+        const ext = path.extname(entry.name).toLowerCase();
+        return VALID_IMAGE_EXTENSIONS.includes(ext);
+      })
+      .map((entry) => {
+        const fileName = entry.name;
+        const baseName = fileName.replace(/\.[^.]+$/, "");
+        const name = baseName
+          .replace(/[-_]+/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+
+        const encoded = encodeURIComponent(fileName);
+
+        return {
+          fileName,
+          src: `/parteneri/${encoded}`,
+          name,
+        };
+      });
+  } catch {
+    return [];
+  }
+}
+
+export async function PartnersStrip() {
+  const logos = await getPartnerLogos();
+  const trackItems = [...logos, ...logos];
+
+  if (logos.length === 0) {
+    return null;
+  }
+
   return (
     <section className="border-b bg-slate-50">
       <div className="container mx-auto px-4 py-10 lg:px-8">
@@ -20,20 +63,30 @@ export function PartnersStrip() {
             </h2>
           </div>
           <p className="max-w-md text-xs text-slate-600">
-            Placeholder pentru logouri sau lista de parteneri oficiali /
-            producatori pe care ii reprezentati pe piata locala.
+            O selectie de parteneri internationali si furnizori de echipamente
+            pentru automatizari industriale.
           </p>
         </div>
 
-        <div className="mt-6 grid gap-3 text-xs text-slate-600 sm:grid-cols-3 md:grid-cols-5">
-          {partners.map((partner) => (
-            <div
-              key={partner}
-              className="flex items-center justify-center rounded border border-dashed border-slate-300 bg-white px-3 py-4 text-center"
-            >
-              {partner}
-            </div>
-          ))}
+        <div className="mt-6 overflow-hidden rounded-xl border border-slate-200 bg-white/70">
+          <div className="marquee-track flex items-center gap-8 py-4">
+            {trackItems.map((logo, index) => (
+              <div
+                key={`${logo.fileName}-${index}`}
+                className="flex min-w-[140px] max-w-[180px] items-center justify-center px-4"
+              >
+                <div className="relative h-10 w-32 grayscale hover:grayscale-0 transition-all duration-300">
+                  <Image
+                    src={logo.src}
+                    alt={logo.name || "Logo partener"}
+                    fill
+                    sizes="128px"
+                    className="object-contain"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>

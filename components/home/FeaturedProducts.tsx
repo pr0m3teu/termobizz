@@ -1,48 +1,73 @@
-import { HOME_FEATURED_PRODUCTS } from "@/lib/homeData";
+import Image from "next/image";
+import Link from "next/link";
+import { getProductsTree } from "@/lib/products";
 
-export function FeaturedProducts() {
+export async function FeaturedProducts() {
+  const tree = await getProductsTree();
+  const allProducts = tree.flatMap((parent) =>
+    parent.children.flatMap((child) => child.products),
+  );
+
+  const featured = allProducts.slice(0, 8);
+
+  if (featured.length === 0) {
+    return null;
+  }
+
   return (
     <section className="border-b bg-white">
-      <div className="container mx-auto px-4 py-12 lg:px-8 lg:py-16">
-        <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+      <div className="container mx-auto px-4 py-10 lg:px-8 lg:py-14">
+        <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-sky-700">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-sky-700">
               Promotii &amp; produse recomandate
             </p>
-            <h2 className="mt-1 text-2xl font-semibold text-slate-900 md:text-3xl">
-              Selectie de produse
+            <h2 className="mt-1 text-xl font-semibold text-slate-900 md:text-2xl">
+              Selectie rapida de produse
             </h2>
           </div>
-          <button className="inline-flex w-fit items-center rounded border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-sky-700 hover:text-sky-800">
-            Vezi toate promotiile
-          </button>
+          <Link
+            href="/produse"
+            className="inline-flex w-fit items-center rounded border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-sky-700 hover:text-sky-800"
+          >
+            Vezi toate produsele
+          </Link>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {HOME_FEATURED_PRODUCTS.map((product) => (
-            <article
-              key={product.id}
-              className="flex h-full flex-col rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm shadow-sm"
-            >
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-sky-700">
-                {product.category}
-              </p>
-              <h3 className="mt-1 text-sm font-semibold text-slate-900">
-                {product.title}
-              </h3>
-              <p className="mt-2 flex-1 text-xs text-slate-600">
-                {product.highlight}
-              </p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <button className="inline-flex flex-1 items-center justify-center rounded bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-sky-700">
-                  Vezi produs
-                </button>
-                <button className="inline-flex flex-1 items-center justify-center rounded border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-sky-700 hover:text-sky-800">
-                  Cere oferta
-                </button>
-              </div>
-            </article>
-          ))}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {featured.map((product) => {
+            const parentSegment = encodeURIComponent(product.parentSlug);
+            const childSegment = encodeURIComponent(product.childSlug);
+            const productSegment = encodeURIComponent(product.productSlug);
+
+            return (
+              <Link
+                key={`${product.parentSlug}-${product.childSlug}-${product.productSlug}`}
+                href={`/produse/${parentSegment}/${childSegment}/${productSegment}`}
+                className="group flex h-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-slate-50 text-xs shadow-sm transition hover:-translate-y-0.5 hover:border-sky-600 hover:shadow-md"
+              >
+                <div className="relative w-full bg-slate-100">
+                  <div className="relative h-32 w-full overflow-hidden">
+                    <Image
+                      src={product.imagePath}
+                      alt={product.productName}
+                      fill
+                      sizes="(min-width: 1024px) 240px, 50vw"
+                      className="object-contain p-3"
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-1 flex-col gap-1 px-3 py-3">
+                  <p className="text-[10px] font-medium uppercase tracking-wide text-sky-700 line-clamp-1">
+                    {product.parentName} / {product.childName}
+                  </p>
+                  <h3 className="line-clamp-2 text-xs font-semibold text-slate-900">
+                    {product.productName}
+                  </h3>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </section>

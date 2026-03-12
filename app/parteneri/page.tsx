@@ -4,7 +4,8 @@ import Image from "next/image";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 
-const PARTNER_DIR = path.join(process.cwd(), "public", "partneri");
+const PARTNER_DIR = path.join(process.cwd(), "public", "parteneri");
+const VALID_IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg"];
 
 type PartnerLogo = {
   fileName: string;
@@ -17,7 +18,11 @@ async function getPartnerLogos(): Promise<PartnerLogo[]> {
     const entries = await fs.readdir(PARTNER_DIR, { withFileTypes: true });
 
     return entries
-      .filter((entry) => entry.isFile())
+      .filter((entry) => {
+        if (!entry.isFile()) return false;
+        const ext = path.extname(entry.name).toLowerCase();
+        return VALID_IMAGE_EXTENSIONS.includes(ext);
+      })
       .map((entry) => {
         const fileName = entry.name;
         const baseName = fileName.replace(/\.[^.]+$/, "");
@@ -30,7 +35,7 @@ async function getPartnerLogos(): Promise<PartnerLogo[]> {
 
         return {
           fileName,
-          src: `/partneri/${encoded}`,
+          src: `/parteneri/${encoded}`,
           name,
         };
       });
@@ -66,7 +71,7 @@ export default async function PartnersPage() {
             <p className="text-sm text-slate-600">
               Nu au fost gasite logouri in directorul{" "}
               <code className="rounded bg-slate-100 px-1 py-0.5 text-xs">
-                public/partneri
+                public/parteneri
               </code>
               . Adaugati fisiere imagine ale partenerilor pentru a le afisa
               aici.
