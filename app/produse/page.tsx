@@ -2,8 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { ProductSidebar } from "@/components/ProductSidebar";
-import { getAllCategories } from "@/lib/products";
+import { getProductsTree } from "@/lib/products";
 
 const PAGE_SIZE = 12;
 
@@ -11,14 +10,10 @@ export default async function ProductsPage(props: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const searchParams = await props.searchParams;
-  const categories = await getAllCategories();
+  const tree = await getProductsTree();
 
-  const allProducts = categories.flatMap((category) =>
-    category.products.map((product) => ({
-      ...product,
-      categorySlug: category.slug,
-      categoryName: category.name,
-    })),
+  const allProducts = tree.flatMap((parent) =>
+    parent.children.flatMap((child) => child.products),
   );
 
   const totalProducts = allProducts.length;
@@ -43,11 +38,7 @@ export default async function ProductsPage(props: {
     <div className="min-h-screen bg-slate-100 text-slate-900">
       <Header />
 
-      <main className="container mx-auto grid gap-8 px-4 py-8 lg:grid-cols-[280px,1fr] lg:px-8 lg:py-12">
-        <div>
-          <ProductSidebar categories={categories} />
-        </div>
-
+      <main className="container mx-auto px-4 py-8 lg:px-8 lg:py-12">
         <section className="space-y-6">
           <header className="flex flex-col gap-2 border-b border-slate-200 pb-4 md:flex-row md:items-end md:justify-between">
             <div>
@@ -59,7 +50,7 @@ export default async function ProductsPage(props: {
               </h1>
             </div>
             <p className="text-xs text-slate-500">
-              {totalProducts} produse in {categories.length} categorii
+              {totalProducts} produse in {tree.length} grupe principale
             </p>
           </header>
 
@@ -74,31 +65,39 @@ export default async function ProductsPage(props: {
           ) : (
             <>
               <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {paginatedProducts.map((product) => (
-                  <Link
-                    key={`${product.categorySlug}-${product.slug}`}
-                    href={`/produse/${product.categorySlug}/${product.slug}`}
-                    className="group flex h-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-                  >
-                    <div className="relative aspect-[4/3] w-full bg-slate-100">
-                      <Image
-                        src={product.imagePath}
-                        alt={product.name}
-                        fill
-                        className="object-contain p-4 transition group-hover:scale-[1.02]"
-                        sizes="(min-width: 1280px) 260px, (min-width: 1024px) 220px, (min-width: 640px) 50vw, 100vw"
-                      />
-                    </div>
-                    <div className="flex flex-1 flex-col gap-1 px-3 py-3">
-                      <p className="text-[11px] font-medium uppercase tracking-wide text-sky-700">
-                        {product.categoryName}
-                      </p>
-                      <h2 className="line-clamp-2 text-sm font-semibold text-slate-900">
-                        {product.name}
-                      </h2>
-                    </div>
-                  </Link>
-                ))}
+                {paginatedProducts.map((product) => {
+                  const parentSegment = encodeURIComponent(product.parentSlug);
+                  const childSegment = encodeURIComponent(product.childSlug);
+                  const productSegment = encodeURIComponent(
+                    product.productSlug,
+                  );
+
+                  return (
+                    <Link
+                      key={`${product.parentSlug}-${product.childSlug}-${product.productSlug}`}
+                      href={`/produse/${parentSegment}/${childSegment}/${productSegment}`}
+                      className="group flex h-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                    >
+                      <div className="relative aspect-[4/3] w-full bg-slate-100">
+                        <Image
+                          src={product.imagePath}
+                          alt={product.productName}
+                          fill
+                          className="object-contain p-4 transition group-hover:scale-[1.02]"
+                          sizes="(min-width: 1280px) 260px, (min-width: 1024px) 220px, (min-width: 640px) 50vw, 100vw"
+                        />
+                      </div>
+                      <div className="flex flex-1 flex-col gap-1 px-3 py-3">
+                        <p className="text-[11px] font-medium uppercase tracking-wide text-sky-700">
+                          {product.parentName} / {product.childName}
+                        </p>
+                        <h2 className="line-clamp-2 text-sm font-semibold text-slate-900">
+                          {product.productName}
+                        </h2>
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
 
               {totalPages > 1 && (

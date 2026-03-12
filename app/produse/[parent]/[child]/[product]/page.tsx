@@ -4,27 +4,28 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { ProductSidebar } from "@/components/ProductSidebar";
-import {
-  getAllCategories,
-  getAllProductParams,
-  getProductBySlugs,
-} from "@/lib/products";
+import { getAllProductParams, findProductBySlugs } from "@/lib/products";
 
-type PageProps = {
-  params: {
-    category: string;
-    product: string;
-  };
-};
+export async function generateStaticParams() {
+  const params = await getAllProductParams();
+  return params.map(({ parent, child, product }) => ({
+    parent,
+    child,
+    product,
+  }));
+}
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<PageProps["params"]>;
+  params: Promise<{
+    parent: string;
+    child: string;
+    product: string;
+  }>;
 }): Promise<Metadata> {
-  const { category, product } = await params;
-  const productData = await getProductBySlugs(category, product);
+  const { parent, child, product } = await params;
+  const productData = await findProductBySlugs(parent, child, product);
 
   if (!productData) {
     return {
@@ -33,27 +34,21 @@ export async function generateMetadata({
   }
 
   return {
-    title: `${productData.name} | ${productData.categoryName} | TermoBizz`,
-    description: `Specificatii si detalii pentru ${productData.name}. Cere o oferta personalizata.`,
+    title: `${productData.productName} | ${productData.childName} | TermoBizz`,
+    description: `Specificatii si detalii pentru ${productData.productName}. Cere o oferta personalizata.`,
   };
 }
 
-export async function generateStaticParams() {
-  const params = await getAllProductParams();
-  return params.map(({ category, product }) => ({
-    category,
-    product,
-  }));
-}
+export default async function ProductPage(props: {
+  params: Promise<{
+    parent: string;
+    child: string;
+    product: string;
+  }>;
+}) {
+  const { parent, child, product } = await props.params;
 
-export default async function ProductPage({ params }: PageProps) {
-  const { category, product } = params;
-
-  const [currentProduct, categories] = await Promise.all([
-    getProductBySlugs(category, product),
-    getAllCategories(),
-  ]);
-
+  const currentProduct = await findProductBySlugs(parent, child, product);
   if (!currentProduct) {
     notFound();
   }
@@ -62,21 +57,13 @@ export default async function ProductPage({ params }: PageProps) {
     <div className="min-h-screen bg-slate-100 text-slate-900">
       <Header />
 
-      <main className="container mx-auto grid gap-8 px-4 py-8 lg:grid-cols-[280px,1fr] lg:px-8 lg:py-12">
-        <div className="order-2 lg:order-1">
-          <ProductSidebar
-            categories={categories}
-            activeCategorySlug={category}
-            activeProductSlug={product}
-          />
-        </div>
-
-        <section className="order-1 rounded-lg border border-slate-200 bg-white p-6 shadow-sm lg:order-2">
+      <main className="container mx-auto px-4 py-8 lg:px-8 lg:py-12">
+        <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm lg:p-8">
           <div className="mb-4 text-xs font-medium uppercase tracking-wide text-sky-700">
-            {currentProduct.categoryName}
+            {currentProduct.parentName} / {currentProduct.childName}
           </div>
           <h1 className="text-2xl font-semibold text-slate-900 md:text-3xl">
-            {currentProduct.name}
+            {currentProduct.productName}
           </h1>
 
           <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1.4fr),minmax(0,1fr)]">
@@ -84,7 +71,7 @@ export default async function ProductPage({ params }: PageProps) {
               <div className="relative aspect-[4/3] w-full max-w-xl overflow-hidden rounded-md bg-slate-200">
                 <Image
                   src={currentProduct.imagePath}
-                  alt={currentProduct.name}
+                  alt={currentProduct.productName}
                   fill
                   className="object-contain"
                   sizes="(min-width: 1024px) 640px, 100vw"
@@ -98,10 +85,10 @@ export default async function ProductPage({ params }: PageProps) {
                   Descriere produs
                 </h2>
                 <p className="mt-2 text-sm text-slate-600">
-                  Placeholder pentru descriere detaliata a produsului. Aici
-                  veti putea include ulterior continut redactat in format
-                  Markdown: caracteristici tehnice, aplicatii tipice, optiuni
-                  constructive si exemple de utilizare.
+                  Placeholder pentru descriere detaliata a produsului. Aici veti
+                  putea include ulterior continut redactat in format Markdown:
+                  caracteristici tehnice, aplicatii tipice, optiuni constructive
+                  si exemple de utilizare.
                 </p>
               </div>
 

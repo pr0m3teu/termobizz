@@ -3,27 +3,25 @@ import path from "path";
 import { cache } from "react";
 
 const PUBLIC_DIR = path.join(process.cwd(), "public");
+const PRODUCTS_ROOT_DIR = path.join(PUBLIC_DIR, "produse_site");
+const PRODUCTS_ROOT_URL = "/produse_site";
 
 const IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
 
-export type ProductImage = {
-  slug: string;
-  name: string;
-  imagePath: string;
-};
-
-export type ProductCategory = {
-  slug: string;
-  name: string;
-  products: ProductImage[];
-};
-
-function humanizeSlug(slug: string): string {
-  return slug
+function humanize(text: string): string {
+  return text
     .replace(/[-_]+/g, " ")
     .replace(/\s+/g, " ")
     .trim()
     .replace(/^./, (c) => c.toUpperCase());
+}
+
+function createSlug(input: string): string {
+  return input
+    .trim()
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 async function directoryExists(dir: string): Promise<boolean> {
@@ -34,131 +32,169 @@ async function directoryExists(dir: string): Promise<boolean> {
     return false;
   }
 }
-type ProductsRoot = {
-  fsPath: string;
-  urlBasePath: string;
+
+export type ProductNode = {
+  parentDir: string;
+  childDir: string;
+  fileName: string;
+  parentName: string;
+  childName: string;
+  productName: string;
+  parentSlug: string;
+  childSlug: string;
+  productSlug: string;
+  imagePath: string;
 };
 
-const getProductsRootDir = cache(async (): Promise<ProductsRoot | null> => {
-  // 1) Preferred: /public/produse
-  const defaultFsPath = path.join(PUBLIC_DIR, "produse");
-  if (await directoryExists(defaultFsPath)) {
-    return {
-      fsPath: defaultFsPath,
-      urlBasePath: "/produse",
-    };
-  }
+export type ChildCategory = {
+  dirName: string;
+  name: string;
+  slug: string;
+  products: ProductNode[];
+};
 
-  // 2) Fallback: any directory under /public whose name starts with "produse"
-  const publicExists = await directoryExists(PUBLIC_DIR);
-  if (!publicExists) {
-    return null;
-  }
+export type ParentCategory = {
+  dirName: string;
+  name: string;
+  slug: string;
+  children: ChildCategory[];
+};
 
-  const publicEntries = await fs.readdir(PUBLIC_DIR, { withFileTypes: true });
-  const candidate = publicEntries.find(
-    (entry) => entry.isDirectory() && entry.name.startsWith("produse"),
-  );
-
-  if (!candidate) {
-    return null;
-  }
-
-  const candidateFsPath = path.join(PUBLIC_DIR, candidate.name);
-  return {
-    fsPath: candidateFsPath,
-    urlBasePath: `/${candidate.name}`,
-  };
-});
-
-export const getAllCategories = cache(
-  async (): Promise<ProductCategory[]> => {
-    const root = await getProductsRootDir();
-    if (!root) {
+export const getProductsTree = cache(
+  async (): Promise<ParentCategory[]> => {
+    const exists = await directoryExists(PRODUCTS_ROOT_DIR);
+    if (!exists) {
       return [];
     }
 
-    const categoryEntries = await fs.readdir(root.fsPath, {
+    const parentEntries = await fs.readdir(PRODUCTS_ROOT_DIR, {
       withFileTypes: true,
     });
 
-    const categories: ProductCategory[] = [];
+    const parents: ParentCategory[] = [];
 
-    for (const entry of categoryEntries) {
-      if (!entry.isDirectory()) continue;
+    for (const parentEntry of parentEntries) {
+      if (!parentEntry.isDirectory()) continue;
 
-      const categorySlug = entry.name;
-      const categoryPath = path.join(root.fsPath, categorySlug);
-      const productEntries = await fs.readdir(categoryPath, {
+      const parentDir = parentEntry.name;
+      const parentPath = path.join(PRODUCTS_ROOT_DIR, parentDir);
+      const parentSlug = createSlug(parentDir);
+
+      const childEntries = await fs.readdir(parentPath, {
         withFileTypes: true,
       });
 
-      const products: ProductImage[] = productEntries
-        .filter(
-          (productEntry) =>
-            productEntry.isFile() &&
-            IMAGE_EXTENSIONS.includes(
-              path.extname(productEntry.name).toLowerCase(),
-            ),
-        )
-        .map((fileEntry) => {
-          const fileName = fileEntry.name;
-          const productSlug = path.basename(fileName, path.extname(fileName));
+      const children: ChildCategory[] = [];
 
-          return {
-            slug: productSlug,
-            name: humanizeSlug(productSlug),
-            imagePath: `${root.urlBasePath}/${categorySlug}/${fileName}`,
-          };
+      for (const childEntry of childEntries) {
+        if (!childEntry.isDirectory()) continue;
+
+        const childDir = childEntry.name;
+        const childPath = path.join(parentPath, childDir);
+        const childSlug = createSlug(childDir);
+
+        const productEntries = await fs.readdir(childPath, {
+          withFileTypes: true,
         });
 
-      categories.push({
-        slug: categorySlug,
-        name: humanizeSlug(categorySlug),
-        products,
-      });
+        const products: ProductNode[] = productEntries
+          .filter(
+            (entry) =>
+              entry.isFile() &&
+              IMAGE_EXTENSIONS.includes(
+                path.extname(entry.name).toLowerCase(),
+              ),
+          )
+          .map((fileEntry) => {
+            const fileName = fileEntry.name;
+            const baseName = path.basename(fileName, path.extname(fileName));
+            const productSlug = createSlug(baseName);
+
+            const encodedParent = encodeURIComponent(parentDir);
+            const encodedChild = encodeURIComponent(childDir);
+            const encodedFile = encodeURIComponent(fileName);
+
+            return {
+              parentDir,
+              childDir,
+              fileName,
+              parentName: humanize(parentDir),
+              childName: humanize(childDir),
+              productName: humanize(baseName),
+              parentSlug,
+              childSlug,
+              productSlug,
+              imagePath: `${PRODUCTS_ROOT_URL}/${encodedParent}/${encodedChild}/${encodedFile}`,
+            };
+          });
+
+        if (products.length > 0) {
+          children.push({
+            dirName: childDir,
+            name: humanize(childDir),
+            slug: childSlug,
+            products,
+          });
+        }
+      }
+
+      if (children.length > 0) {
+        parents.push({
+          dirName: parentDir,
+          name: humanize(parentDir),
+          slug: parentSlug,
+          children,
+        });
+      }
     }
 
-    return categories;
+    return parents;
   },
 );
 
 export async function getAllProductParams(): Promise<
-  { category: string; product: string }[]
+  { parent: string; child: string; product: string }[]
 > {
-  const categories = await getAllCategories();
-  const params: { category: string; product: string }[] = [];
+  const tree = await getProductsTree();
+  const params: { parent: string; child: string; product: string }[] = [];
 
-  for (const category of categories) {
-    for (const product of category.products) {
-      params.push({ category: category.slug, product: product.slug });
+  for (const parent of tree) {
+    for (const child of parent.children) {
+      for (const product of child.products) {
+        params.push({
+          parent: parent.slug,
+          child: child.slug,
+          product: product.productSlug,
+        });
+      }
     }
   }
 
   return params;
 }
 
-export async function getProductBySlugs(
-  categorySlug: string,
+export async function findProductBySlugs(
+  parentSlug: string,
+  childSlug: string,
   productSlug: string,
-): Promise<
-  | (ProductImage & {
-      categorySlug: string;
-      categoryName: string;
-    })
-  | null
-> {
-  const categories = await getAllCategories();
-  const category = categories.find((c) => c.slug === categorySlug);
-  if (!category) return null;
+): Promise<ProductNode | null> {
+  const tree = await getProductsTree();
 
-  const product = category.products.find((p) => p.slug === productSlug);
-  if (!product) return null;
+  for (const parent of tree) {
+    if (parent.slug !== parentSlug) continue;
 
-  return {
-    ...product,
-    categorySlug: category.slug,
-    categoryName: category.name,
-  };
+    for (const child of parent.children) {
+      if (child.slug !== childSlug) continue;
+
+      const product = child.products.find(
+        (p) => p.productSlug === productSlug,
+      );
+      if (product) {
+        return product;
+      }
+    }
+  }
+
+  return null;
 }
 

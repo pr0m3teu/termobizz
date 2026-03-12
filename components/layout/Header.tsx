@@ -4,7 +4,7 @@ import Image from "next/image";
 const mainNav = [
   { label: "Produse", href: "/produse" },
   { label: "Promotii", href: "/promotii" },
-  { label: "Aplicatii", href: "/aplicatii" },
+  { label: "Parteneri", href: "/parteneri" },
   { label: "Despre noi", href: "/despre-noi" },
   { label: "Contact", href: "/contact" },
 ];

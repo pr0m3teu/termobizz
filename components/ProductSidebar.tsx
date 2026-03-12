@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import type { ProductCategory } from "@/lib/products";
 
 type ProductSidebarProps = {
-  categories: ProductCategory[];
+  categories: {
+    slug: string;
+    name: string;
+    products: { slug: string; name: string }[];
+  }[];
   activeCategorySlug?: string;
   activeProductSlug?: string;
 };
